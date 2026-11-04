@@ -50,12 +50,15 @@
 - [x] إعداد Vite PWA بمظهر التطبيق الكامل (Standalone Manifest, Theme Color, Icons).
 - [x] إعداد أدوات الفحص والاختبارات (Vitest, Vue Test Utils, Type Check).
 
-### Phase 2 — أساس Supabase والأمان (Supabase Foundation & Auth) `[قادمة]`
-- [ ] تثبيت وإعداد `@supabase/supabase-js`.
-- [ ] كتابة ملفات الترحيل SQL migrations للجداول الـ 14 المحددة.
-- [ ] تفعيل سياسات الأمان RLS على جميع الجداول للمالك فقط (`auth.uid() = owner_id`).
-- [ ] إنشاء Storage Buckets الخاصة (`audio` و `covers`) وتوثيق سياسات القراءة والكتابة عبر Signed URLs.
-- [ ] حظر التسجيل العام وربط صفحة تسجيل الدخول بالمصادقة السحابية.
+### Phase 2 — أساس Supabase والأمان (Supabase Foundation & Auth) `[مكتملة]`
+- [x] تثبيت وإعداد حزمة `@supabase/supabase-js`.
+- [x] كتابة ملفات الترحيل SQL migrations للجداول الـ 13 المحددة:
+  - `profiles`, `artists`, `albums`, `genres`, `tracks`, `playlists`, `playlist_tracks`, `favorites`, `listening_history`, `playback_state`, `devices`, `device_downloads`, `user_settings`.
+- [x] تفعيل سياسات الأمان RLS على جميع الجداول للمالك فقط (`auth.uid() = owner_id`).
+- [x] إنشاء Storage Buckets الخاصة (`audio` و `covers`) وتوثيق سياسات القراءة والكتابة ومنع الوصول العام.
+- [x] بناء خدمة التخزين الآمن وتوليد الروابط الموقعة (`getSignedAudioUrl` و `getSignedCoverUrl`).
+- [x] حظر التسجيل العام وربط صفحة تسجيل الدخول بالمصادقة السحابية مع حارس التوجيه (Auth Guard).
+- [x] إعداد دليل تفصيلي خطوة بخطوة في `supabase/README.md`.
 
 ### Phase 3 — إدارة الرفع والكتالوج (Upload Manager & Catalog) `[قادمة]`
 - [ ] دعم رفع الملفات المتعددة مع السحب والإفلات (Drag & Drop).

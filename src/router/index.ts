@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -95,6 +96,25 @@ export const router = createRouter({
       return savedPosition
     }
     return { top: 0 }
+  }
+})
+
+// Authentication Navigation Guard
+router.beforeEach(async (to, _from, next) => {
+  const auth = useAuthStore()
+
+  if (!auth.isInitialized) {
+    await auth.initialize()
+  }
+
+  const isPublic = to.meta.public === true
+
+  if (!isPublic && !auth.isAuthenticated) {
+    next({ name: 'login', query: { redirect: to.fullPath } })
+  } else if (to.name === 'login' && auth.isAuthenticated) {
+    next({ name: 'home' })
+  } else {
+    next()
   }
 })
 

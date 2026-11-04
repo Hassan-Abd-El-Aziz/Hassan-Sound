@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { ShieldCheck, Lock, Mail, Radio, AlertCircle, Languages } from 'lucide-vue-next'
+import { useRouter, useRoute } from 'vue-router'
+import { ShieldCheck, Lock, Mail, Radio, AlertCircle, Languages, Database } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 
 const { t, locale, toggleLocale } = useI18n()
 const auth = useAuthStore()
 const router = useRouter()
+const route = useRoute()
 
 const email = ref('owner@mysound.local')
 const password = ref('')
@@ -25,9 +26,10 @@ const handleSubmit = async () => {
   try {
     const success = await auth.login(email.value, password.value)
     if (success) {
-      router.push('/')
+      const redirectPath = (route.query.redirect as string) || '/'
+      router.push(redirectPath)
     } else {
-      errorMessage.value = 'بيانات الدخول غير صحيحة أو الحساب غير مصرح له'
+      errorMessage.value = auth.authError || 'بيانات الدخول غير صحيحة أو الحساب غير مصرح له'
     }
   } catch (err: any) {
     errorMessage.value = err.message || 'فشل تسجيل الدخول'
@@ -65,6 +67,24 @@ const handleSubmit = async () => {
           <ShieldCheck class="w-3.5 h-3.5" />
           <span>{{ t('app.privateBadge') }}</span>
         </div>
+      </div>
+
+      <!-- Supabase Connection Indicator -->
+      <div
+        :class="[
+          'p-3 rounded-xl border text-xs flex items-center justify-between',
+          auth.isConfigured
+            ? 'bg-emerald-950/40 border-emerald-800/50 text-emerald-300'
+            : 'bg-amber-950/40 border-amber-800/50 text-amber-300'
+        ]"
+      >
+        <div class="flex items-center gap-2">
+          <Database class="w-4 h-4 shrink-0" />
+          <span>
+            {{ auth.isConfigured ? 'متصل بقاعدة Supabase الخاصة' : 'وضع العرض المحلي (يرجى إعداد .env)' }}
+          </span>
+        </div>
+        <span class="w-2 h-2 rounded-full" :class="auth.isConfigured ? 'bg-emerald-400' : 'bg-amber-400'"></span>
       </div>
 
       <!-- Error Alert -->
@@ -116,7 +136,7 @@ const handleSubmit = async () => {
       <!-- Security Notice Footer -->
       <div class="pt-4 border-t border-slate-800/60 text-center">
         <p class="text-[11px] text-slate-400 leading-relaxed">
-          هذا التطبيق خاص ومغلق. لا يُسمح بالتسجيل العام للمستخدمين وفقًا لسياسات الأمان وقواعد RLS في Supabase.
+          هذا التطبيق خاص ومغلق لمالك واحد فقط. لا يُسمح بالتسجيل العام للمستخدمين وفقًا لسياسات الأمان وقواعد RLS في Supabase.
         </p>
       </div>
     </div>

@@ -8,6 +8,20 @@
 
 ---
 
+## [0.2.0] - 2026-11-04
+### Added (Phase 2 - Supabase Foundation & Auth)
+- إضافة حزمة `@supabase/supabase-js`.
+- كتابة ملفات الترحيل SQL migrations الأربعة:
+  - `20261104000001_create_schema.sql`: الجداول الـ 13 والفهارس والقيود.
+  - `20261104000002_enable_rls.sql`: تفعيل سياسات Row Level Security للمالك فقط.
+  - `20261104000003_storage_buckets.sql`: إنشاء Buckets الخاصة `audio` و `covers`.
+  - `20261104000004_triggers_and_functions.sql`: مشغلات التحديث والملفات الشخصية التلقائية.
+- إنشاء خدمة التخزين `src/services/supabase.ts` مع دوال الروابط الموقعة `getSignedAudioUrl` و `getSignedCoverUrl`.
+- ربط `src/stores/auth.ts` بمصادقة Supabase الرسمية وتتبع الجلسات والتجديد التلقائي.
+- إضافة حارس التوجيه (Auth Guard) في `src/router/index.ts` لحماية المسارات وإعادة التوجيه للـ Login.
+- كتابة دليل إعداد المشروع وخطوات التهيئة في `supabase/README.md`.
+- إضافة اختبارات الوحدة للعميل والخدمة ومخزن المصادقة (16 اختبار ناجح).
+
 ## [0.1.0] - 2026-11-04
 ### Added (Phase 0 & Phase 1)
 - **Phase 0:**
