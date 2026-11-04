@@ -8,6 +8,15 @@
 
 ---
 
+## [0.8.0] - 2026-11-04
+### Added (Phase 8 - Polish, Backup Manifest, iOS & Shortcuts)
+- إنشاء خدمة النسخ الاحتياطي `src/services/backupService.ts` لتوليد واستيراد بيان المكتبة الرقمي (Library Manifest v1.0).
+- إعداد وثيقة توثيق استراتيجية النسخ الاحتياطي الشاملة في `docs/BACKUP_AND_RESTORE.md`.
+- إعداد وثيقة قيود ومعمارية WebKit و iOS في `docs/IOS_LIMITATIONS.md` وتغطية سياسات إخلاء التخزين بعد 7 أيام وتشغيل الصوت في الخلفية والتثبيت كـ PWA.
+- بناء نافذة اختصارات لوحة المفاتيح `src/components/common/ShortcutsModal.vue` وربط اختصار `?` و `Esc` عالميًا في `App.vue`.
+- تطوير شاشة الإعدادات `src/views/SettingsView.vue` بأزرار تصدير واستيراد ملف بيان المكتبة JSON واختصارات لوحة المفاتيح مع رسائل تأكيد فورية.
+- إضافة 4 اختبارات وحدة للـ Backup Manifest ليصبح إجمالي الاختبارات الناجحة 44 اختباراً.
+
 ## [0.7.0] - 2026-11-04
 ### Added (Phase 7 - Device Sync, Playback State & Outbox)
 - إنشاء خدمة تسجيل الأجهزة `src/services/deviceService.ts` لتوليد معرّف `device_id` فريد وحفظ تفاصيل المتصفح ونظام التشغيل.

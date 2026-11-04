@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppSidebar from '@/components/layout/AppSidebar.vue'
 import AppHeader from '@/components/layout/AppHeader.vue'
 import AppBottomNav from '@/components/layout/AppBottomNav.vue'
 import MiniPlayer from '@/components/layout/MiniPlayer.vue'
 import NowPlayingModal from '@/components/layout/NowPlayingModal.vue'
+import ShortcutsModal from '@/components/common/ShortcutsModal.vue'
 import { usePlayerStore } from '@/stores/player'
 
 const route = useRoute()
 const player = usePlayerStore()
+const showShortcuts = ref(false)
 
 const isPublicRoute = computed(() => {
   return route.name === 'login'
@@ -23,7 +25,13 @@ const handleKeydown = (e: KeyboardEvent) => {
     return
   }
 
-  if (e.code === 'Space') {
+  if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+    e.preventDefault()
+    showShortcuts.value = !showShortcuts.value
+  } else if (e.key === 'Escape' && showShortcuts.value) {
+    e.preventDefault()
+    showShortcuts.value = false
+  } else if (e.code === 'Space') {
     e.preventDefault()
     player.togglePlay()
   } else if (e.code === 'ArrowRight' && e.ctrlKey) {
@@ -83,6 +91,9 @@ onUnmounted(() => {
 
       <!-- Mobile Bottom Navigation (fixed at bottom on mobile) -->
       <AppBottomNav />
+
+      <!-- Keyboard Shortcuts Modal -->
+      <ShortcutsModal :is-open="showShortcuts" @close="showShortcuts = false" />
     </template>
   </div>
 </template>

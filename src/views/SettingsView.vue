@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Languages,
@@ -14,16 +14,28 @@ import {
   RefreshCw,
   CheckCircle2,
   Clock,
-  WifiOff
+  WifiOff,
+  Download,
+  UploadCloud,
+  Keyboard,
+  FileJson
 } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import { useAuthStore } from '@/stores/auth'
 import { useSyncStore } from '@/stores/sync'
+import { backupService } from '@/services/backupService'
+import ShortcutsModal from '@/components/common/ShortcutsModal.vue'
 
 const { t, locale, setLocale } = useI18n()
 const auth = useAuthStore()
 const sync = useSyncStore()
 const router = useRouter()
+
+const isExporting = ref(false)
+const isImporting = ref(false)
+const feedbackMessage = ref<{ type: 'success' | 'error'; text: string } | null>(null)
+const showShortcuts = ref(false)
+const fileInputRef = ref<HTMLInputElement | null>(null)
 
 onMounted(async () => {
   await sync.init()
@@ -32,6 +44,59 @@ onMounted(async () => {
 const isSupabaseConfigured = computed(() => {
   return !!import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_URL !== 'https://your-project-ref.supabase.co'
 })
+
+const handleExportManifest = async () => {
+  if (isExporting.value) return
+  isExporting.value = true
+  feedbackMessage.value = null
+  try {
+    const ownerId = auth.user?.id || 'demo-owner'
+    const manifest = await backupService.generateManifest(ownerId)
+    backupService.downloadManifestFile(manifest)
+    feedbackMessage.value = {
+      type: 'success',
+      text: `تم تصدير ملف الـ Manifest بنجاح (${manifest.summary.tracks_count} مسار).`
+    }
+  } catch (e: any) {
+    feedbackMessage.value = {
+      type: 'error',
+      text: 'فشل في تصدير ملف الـ Manifest: ' + (e?.message || 'خطأ غير معروف')
+    }
+  } finally {
+    isExporting.value = false
+  }
+}
+
+const triggerFileInput = () => {
+  fileInputRef.value?.click()
+}
+
+const handleFileImport = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  isImporting.value = true
+  feedbackMessage.value = null
+  try {
+    const text = await file.text()
+    const ownerId = auth.user?.id || 'demo-owner'
+    const result = await backupService.importManifest(ownerId, text)
+    if (result.success) {
+      feedbackMessage.value = { type: 'success', text: result.message }
+    } else {
+      feedbackMessage.value = { type: 'error', text: result.message }
+    }
+  } catch (e: any) {
+    feedbackMessage.value = {
+      type: 'error',
+      text: 'فشل في قراءة ملف الـ Manifest: ' + (e?.message || 'خطأ غير معروف')
+    }
+  } finally {
+    isImporting.value = false
+    if (target) target.value = ''
+  }
+}
 
 const handleLogout = async () => {
   await auth.logout()
@@ -93,7 +158,7 @@ const handleLogout = async () => {
         </div>
 
         <!-- Theme Info -->
-        <div class="flex items-center justify-between">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800/60">
           <div class="flex items-center gap-3">
             <div class="w-10 h-10 rounded-xl bg-slate-800 text-slate-300 flex items-center justify-center shrink-0">
               <Moon class="w-5 h-5 text-indigo-400" />
@@ -106,6 +171,25 @@ const handleLogout = async () => {
           <span class="text-xs font-semibold text-orange-400 px-3 py-1 rounded-full bg-slate-800 border border-slate-700">
             Dark Mode (Default)
           </span>
+        </div>
+
+        <!-- Keyboard Shortcuts Trigger -->
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-orange-500/20 text-orange-400 flex items-center justify-center shrink-0">
+              <Keyboard class="w-5 h-5" />
+            </div>
+            <div>
+              <h4 class="text-sm font-semibold text-white">اختصارات لوحة المفاتيح</h4>
+              <p class="text-xs text-slate-400">تحكم سريع بالمسارات، الصوت، والنوافذ عبر لوحة المفاتيح</p>
+            </div>
+          </div>
+          <button
+            @click="showShortcuts = true"
+            class="px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 transition active:scale-95"
+          >
+            عرض الاختصارات (?)
+          </button>
         </div>
       </div>
     </section>
@@ -217,7 +301,71 @@ const handleLogout = async () => {
       </div>
     </section>
 
-    <!-- Section 4: Supabase Security Status -->
+    <!-- Section 4: Backup & Library Manifest -->
+    <section class="space-y-4">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">
+        النسخ الاحتياطي والبيانات (Backup & Manifest)
+      </h3>
+
+      <div class="rounded-2xl border border-slate-800/80 bg-slate-900/40 p-4 sm:p-5 space-y-4">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center shrink-0 mt-0.5">
+            <FileJson class="w-5 h-5" />
+          </div>
+          <div class="space-y-1">
+            <h4 class="text-sm font-semibold text-white">ملف بيان المكتبة (Library Manifest JSON)</h4>
+            <p class="text-xs text-slate-400 leading-relaxed">
+              تصدير خريطة رقمية كاملة تحتوي على كافة المسارات، الفنانين، الألبومات، وقوائم التشغيل وبصمات SHA-256 لنقل المكتبة أو استعادتها.
+            </p>
+          </div>
+        </div>
+
+        <!-- Feedback Alert -->
+        <div
+          v-if="feedbackMessage"
+          :class="[
+            'p-3 rounded-xl text-xs font-medium flex items-center gap-2',
+            feedbackMessage.type === 'success'
+              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+              : 'bg-red-500/20 text-red-300 border border-red-500/30'
+          ]"
+        >
+          <CheckCircle2 v-if="feedbackMessage.type === 'success'" class="w-4 h-4 shrink-0" />
+          <span>{{ feedbackMessage.text }}</span>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-800/60">
+          <button
+            @click="handleExportManifest"
+            :disabled="isExporting"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 disabled:opacity-50"
+          >
+            <Download class="w-4 h-4 text-orange-400" />
+            <span>{{ isExporting ? 'جاري التصدير...' : 'تصدير الـ Manifest' }}</span>
+          </button>
+
+          <button
+            @click="triggerFileInput"
+            :disabled="isImporting"
+            class="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition active:scale-95 disabled:opacity-50"
+          >
+            <UploadCloud class="w-4 h-4 text-purple-400" />
+            <span>{{ isImporting ? 'جاري الاستيراد...' : 'استيراد الـ Manifest' }}</span>
+          </button>
+
+          <input
+            ref="fileInputRef"
+            type="file"
+            accept=".json,application/json"
+            class="hidden"
+            @change="handleFileImport"
+          />
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5: Supabase Security Status -->
     <section class="space-y-4">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-slate-400 px-1">
         حالة الأمان السحابي (Cloud Security)
@@ -264,5 +412,8 @@ const handleLogout = async () => {
         <span>{{ t('nav.logout') }}</span>
       </button>
     </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <ShortcutsModal :is-open="showShortcuts" @close="showShortcuts = false" />
   </div>
 </template>
