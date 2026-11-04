@@ -8,6 +8,15 @@
 
 ---
 
+## [0.7.0] - 2026-11-04
+### Added (Phase 7 - Device Sync, Playback State & Outbox)
+- إنشاء خدمة تسجيل الأجهزة `src/services/deviceService.ts` لتوليد معرّف `device_id` فريد وحفظ تفاصيل المتصفح ونظام التشغيل.
+- بناء خدمة المزامنة `src/services/syncService.ts` ومخزن Pinia `src/stores/sync.ts`.
+- تطبيق سياسة Last-Write-Wins (LWW) لمنع استبدال موضع التشغيل السحابي الأحدث بتحديث أقدم من جهاز غير متصل.
+- تطبيق نمط Outbox في IndexedDB لجدولة التعديلات غير المتصلة وإرسالها تراكميًا بصورة Idempotent فور عودة الاتصال.
+- تطوير صفحة الإعدادات `SettingsView.vue` لعرض الأجهزة المرتبطة، وشارة حالة المزامنة (Synced / Pending / Offline) وزر المزامنة الفورية.
+- إضافة اختبارات وحدة للمزامنة ومعالجة التضارب وصندوق الـ Outbox (إجمالي 40 اختبار وحدة ناجح).
+
 ## [0.6.0] - 2026-11-04
 ### Added (Phase 6 - Offline Architecture & Downloads)
 - تثبيت وإعداد `dexie` لإنشاء قاعدة بيانات IndexedDB (`MySoundOfflineDB`) لتخزين المسارات والأغلفة كـ Blobs.

@@ -25,15 +25,31 @@ export interface OfflineQueueItem {
   started_at: string
 }
 
+export interface OutboxItem {
+  id: string
+  action: 'TOGGLE_FAVORITE' | 'LOG_PLAYBACK' | 'UPDATE_SETTINGS' | 'CREATE_PLAYLIST'
+  payload: any
+  timestamp: string
+  status: 'pending' | 'syncing' | 'synced' | 'failed'
+  retry_count: number
+  error_message?: string
+}
+
 export class MySoundOfflineDB extends Dexie {
   tracks!: EntityTable<OfflineTrackRecord, 'id'>
   queue!: EntityTable<OfflineQueueItem, 'id'>
+  outbox!: EntityTable<OutboxItem, 'id'>
 
   constructor() {
     super('MySoundOfflineDB')
     this.version(1).stores({
       tracks: 'id, title, artist_name, album_title, content_hash, downloaded_at',
       queue: 'id, track_id, status, started_at'
+    })
+    this.version(2).stores({
+      tracks: 'id, title, artist_name, album_title, content_hash, downloaded_at',
+      queue: 'id, track_id, status, started_at',
+      outbox: 'id, action, status, timestamp, retry_count'
     })
   }
 }
