@@ -8,6 +8,15 @@
 
 ---
 
+## [0.6.0] - 2026-11-04
+### Added (Phase 6 - Offline Architecture & Downloads)
+- تثبيت وإعداد `dexie` لإنشاء قاعدة بيانات IndexedDB (`MySoundOfflineDB`) لتخزين المسارات والأغلفة كـ Blobs.
+- بناء خدمة التنزيل `downloadService.ts` للتحقق من سلامة الملفات وبصمات SHA-256 قبل وسمها كـ Downloaded.
+- إنشاء مخزن التنزيلات `src/stores/offline.ts` مع متابعة الحصص والمساحات المستخدمة ونسبة الاستهلاك.
+- ربط `AudioEngine` بالتشغيل دون اتصال: تشغيل المسار تلقائياً كـ `Blob URL` عند توفره محلياً، وحظر محاولات البث السحابي في وضع عدم الاتصال للأغاني غير المنزلة مع تنبيه ملائم.
+- تطوير صفحة التنزيلات `DownloadsView.vue` مع مراقبة استهلاك الذاكرة، وطلب تثبيت التخزين الدائم، وحذف الملفات محلياً فقط.
+- إضافة اختبارات وحدة للتخزين في IndexedDB والتحقق وسحب الـ Blobs (إجمالي 36 اختبار وحدة ناجح).
+
 ## [0.5.0] - 2026-11-04
 ### Added (Phase 5 - Playlists & Collections)
 - إنشاء خدمة المجموعات `src/services/collectionsService.ts` ومخزن Pinia `src/stores/collections.ts`.

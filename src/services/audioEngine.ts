@@ -123,7 +123,8 @@ export class AudioEngine {
   }
 
   /**
-   * Plays a track, fetching a fresh signed URL from Supabase Storage if needed.
+   * Plays a track, fetching a fresh signed URL from Supabase Storage if needed,
+   * or playing directly from IndexedDB if downloaded locally.
    */
   public async loadAndPlay(track: Track, startTime = 0): Promise<boolean> {
     this.currentTrack = track
@@ -133,19 +134,35 @@ export class AudioEngine {
       this.emit('waiting')
       let streamUrl = ''
 
-      if (isSupabaseConfigured() && track.storage_path) {
-        // Fetch fresh signed URL valid for 3600 seconds (1 hour)
-        const { url, error } = await storageService.getSignedAudioUrl(track.storage_path, 3600)
-        if (error || !url) {
-          throw error || new Error('Could not get signed URL')
-        }
-        streamUrl = url
-        this.signedUrlExpiry = Date.now() + 3500 * 1000 // refresh slightly before 1 hour
-      } else if (track.storage_path && track.storage_path.startsWith('http')) {
-        streamUrl = track.storage_path
+      // 1. Check if track is downloaded locally in IndexedDB
+      const { downloadService } = await import('./downloadService')
+      const offlineBlob = await downloadService.getOfflineAudioBlob(track.id)
+
+      if (offlineBlob) {
+        console.log('[AudioEngine] Playing track from local IndexedDB offline storage!')
+        streamUrl = URL.createObjectURL(offlineBlob)
       } else {
-        // In local demo or offline mode without remote stream, start gentle synthetic harmony
-        return this.startSyntheticPlayback(track, startTime)
+        // 2. If NOT downloaded locally, check online connection
+        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+        if (!isOnline) {
+          const msg = 'هذه الأغنية غير منزلة محلياً على هذا الجهاز وتتطلب اتصالاً بالإنترنت لتشغيلها.'
+          this.emit('error', msg)
+          return false
+        }
+
+        // 3. Online cloud stream via Supabase signed URL
+        if (isSupabaseConfigured() && track.storage_path) {
+          const { url, error } = await storageService.getSignedAudioUrl(track.storage_path, 3600)
+          if (error || !url) {
+            throw error || new Error('Could not get signed URL')
+          }
+          streamUrl = url
+          this.signedUrlExpiry = Date.now() + 3500 * 1000
+        } else if (track.storage_path && track.storage_path.startsWith('http')) {
+          streamUrl = track.storage_path
+        } else {
+          return this.startSyntheticPlayback(track, startTime)
+        }
       }
 
       this.audio.src = streamUrl
@@ -159,7 +176,6 @@ export class AudioEngine {
       return true
     } catch (err: any) {
       console.warn('[AudioEngine] Direct play error, checking fallback:', err)
-      // If browser blocked autoplay or URL failed, try fallback
       if (err.name === 'NotAllowedError') {
         this.emit('autoplay_blocked')
         return false
