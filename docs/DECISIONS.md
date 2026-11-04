@@ -140,3 +140,17 @@
   - توفير نافذة منبثقة تفاعلية لاختصارات لوحة المفاتيح (`ShortcutsModal.vue`) تفتح بالضغط على `?` وتغلق بـ `Esc`، مع أزرار مباشرة في شاشة الإعدادات.
 - **الآثار والنتائج:** سهولة استعادة المكتبة، فهم دقيق لسلوك PWA على أجهزة Apple، وتجربة تحكم مكتبية مريحة للمستخدم.
 
+---
+
+## ADR 013: إعدادات الإنتاج وترويسات التخزين المؤقت والأمان (Production Deployment & Security Headers)
+- **الحالة:** معتمد (Accepted)
+- **السياق:** نشر تطبيق PWA أحادي الصفحة (SPA) يتطلب دعم إعادة توجيه المسارات إلى `index.html`، وضمان عدم قيام المتصفحات بتخزين ملف عامل الخدمة `sw.js` لمنع تعليق التحديثات، مع الحفاظ على تخزين طويل الأمد للأصول الثابتة المجزأة ببصمات تجزئة (Hashed Assets).
+- **القرار:**
+  - تضمين إعدادات جاهزة للنشر على كبرى المنصات السحابية: `vercel.json` لـ Vercel، `netlify.toml` لـ Netlify، و `_redirects` و `_headers` لـ Cloudflare Pages، ونموذج إعدادات Nginx للاستضافة الذاتية.
+  - إلزام سياسة `Cache-Control: no-cache, no-store, must-revalidate` لملفي `sw.js` و `manifest.webmanifest`.
+  - تطبيق سياسة `Cache-Control: public, max-age=31536000, immutable` لملفات المجلد `assets/*`.
+  - تفعيل ترويسات الأمان الصارمة: `X-Content-Type-Options: nosniff` و `X-Frame-Options: DENY` و `Referrer-Policy: strict-origin-when-cross-origin` و `Permissions-Policy`.
+  - توثيق تعليمات النشر في `docs/DEPLOYMENT.md` والتأكيد على حظر استخدام `service_role` في بيئة الإنتاج.
+- **الآثار والنتائج:** إمكانية نشر التطبيق بنقرة واحدة على أي منصة سحابية مع استقرار عالي وتحديثات فورية دون انقطاع.
+
+

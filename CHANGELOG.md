@@ -8,6 +8,17 @@
 
 ---
 
+## [1.0.0] - 2026-11-04
+### Added (Phase 9 - Production Release & Deployment)
+- إجراء الفحص الأمني الشامل والتأكد من خلو ملفات الكود ومخرجات البناء من أي مفاتيح حساسة أو `service_role`.
+- إنشاء ملفات التكوين للنشر بنقرة واحدة:
+  - `vercel.json`: قواعد إعادة توجيه مسارات SPA وترويسات التخزين المؤقت والأمان على Vercel.
+  - `netlify.toml`: إعدادات البناء وإعادة التوجيه لـ Netlify.
+  - `public/_redirects` و `public/_headers`: دعم كامل لـ Cloudflare Pages.
+- إضافة أيقونة أجهزة أبل `public/icons/apple-touch-icon.png` لضمان ظهور أيقونة PWA بدقة عند التثبيت على شاشة iPhone/iPad.
+- إعداد توثيق ودليل النشر الشامل في `docs/DEPLOYMENT.md` بما في ذلك إعدادات خوادم Nginx وقوائم التحقق قبل الإطلاق.
+- تفعيل ترويسات منع كاش ملف `sw.js` لضمان التحديث التلقائي الفوري لـ Service Worker مع كاش سنوي للأصول المجزأة (Hashed Assets).
+
 ## [0.8.0] - 2026-11-04
 ### Added (Phase 8 - Polish, Backup Manifest, iOS & Shortcuts)
 - إنشاء خدمة النسخ الاحتياطي `src/services/backupService.ts` لتوليد واستيراد بيان المكتبة الرقمي (Library Manifest v1.0).

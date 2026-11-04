@@ -84,7 +84,10 @@ npm run type-check  # التحقق من صحة الأنواع في TypeScript
 mysound/
 ├── docs/
 │   ├── ROADMAP.md          # خارطة الطريق والمراحل التفصيلية
-│   ├── DECISIONS.md        # سجل القرارات الهندسية والمعمارية (ADR)
+│   ├── DECISIONS.md        # سجل القرارات الهندسية والمعمارية (ADR 001-013)
+│   ├── DEPLOYMENT.md       # دليل النشر للإنتاج (Vercel, Netlify, Cloudflare, Nginx)
+│   ├── BACKUP_AND_RESTORE.md # استراتيجية النسخ الاحتياطي واستيراد الـ Manifest
+│   └── IOS_LIMITATIONS.md  # معمارية وقيود WebKit و iOS PWA
 ├── src/
 │   ├── assets/             # ملفات التنسيق والخطوط والأيقونات
 │   ├── components/         # مكونات واجهة المستخدم القابلة لإعادة الاستخدام
@@ -113,11 +116,11 @@ mysound/
 
 - [x] **Phase 0: الاستكشاف والتخطيط (Discovery & Plan)**
 - [x] **Phase 1: الأساس المعماري والواجهة (Foundation & Shell)**
-- [ ] **Phase 2: قاعدة بيانات Supabase والأمان (Supabase Foundation & Auth)**
-- [ ] **Phase 3: إدارة الرفع والكتالوج (Upload Manager & Catalog)**
-- [ ] **Phase 4: محرك الصوت والمشغل المستمر (Audio Engine & Player)**
-- [ ] **Phase 5: القوائم والمجموعات (Playlists & Collections)**
-- [ ] **Phase 6: التشغيل دون اتصال (Offline Storage & IndexedDB)**
-- [ ] **Phase 7: المزامنة السحابية والحالة (Device Sync & Outbox)**
-- [ ] **Phase 8: التحسين والأداء والنسخ الاحتياطي (Polish & Backup)**
-- [ ] **Phase 9: الإطلاق والإنتاج (Production & Release)**
+- [x] **Phase 2: قاعدة بيانات Supabase والأمان (Supabase Foundation & Auth)**
+- [x] **Phase 3: إدارة الرفع والكتالوج (Upload Manager & Catalog)**
+- [x] **Phase 4: محرك الصوت والمشغل المستمر (Audio Engine & Player)**
+- [x] **Phase 5: القوائم والمجموعات (Playlists & Collections)**
+- [x] **Phase 6: التشغيل دون اتصال (Offline Storage & IndexedDB)**
+- [x] **Phase 7: المزامنة السحابية والحالة (Device Sync & Outbox)**
+- [x] **Phase 8: التحسين والأداء والنسخ الاحتياطي (Polish & Backup)**
+- [x] **Phase 9: الإطلاق والإنتاج (Production & Release)** — *v1.0.0 Production Ready*
