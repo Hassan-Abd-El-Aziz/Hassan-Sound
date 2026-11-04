@@ -16,7 +16,9 @@ import {
   Trash2,
   Music2,
   Download,
-  CheckCircle2
+  CheckCircle2,
+  ChevronUp,
+  Loader2
 } from 'lucide-vue-next'
 import { usePlayerStore } from '@/stores/player'
 import { useI18n } from '@/i18n'
@@ -47,7 +49,7 @@ const handleSeek = (e: MouseEvent) => {
   >
     <div
       v-if="player.isNowPlayingOpen"
-      class="fixed inset-0 z-50 bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-slate-100 flex flex-col overflow-hidden backdrop-blur-2xl"
+      class="fixed inset-0 z-50 bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-slate-100 flex flex-col overflow-hidden backdrop-blur-2xl select-none"
     >
       <!-- Top Bar -->
       <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800/40">
@@ -82,7 +84,7 @@ const handleSeek = (e: MouseEvent) => {
 
       <!-- Main Body Container -->
       <div class="flex-1 overflow-y-auto px-6 py-6 flex flex-col items-center justify-between max-w-lg mx-auto w-full">
-        <!-- View Mode: Queue Drawer vs Artwork & Player -->
+        <!-- View Mode: Queue Drawer -->
         <div v-if="showQueue" class="w-full flex-1 flex flex-col">
           <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
             <h3 class="font-bold text-base text-slate-200 flex items-center gap-2">
@@ -103,7 +105,7 @@ const handleSeek = (e: MouseEvent) => {
             {{ t('player.emptyQueue') }}
           </div>
 
-          <div v-else class="space-y-2 overflow-y-auto max-h-[50vh]">
+          <div v-else class="space-y-2 overflow-y-auto max-h-[55vh]">
             <div
               v-for="(track, idx) in player.queue"
               :key="track.id + idx"
@@ -122,16 +124,37 @@ const handleSeek = (e: MouseEvent) => {
                   <p class="text-xs text-slate-400 truncate">{{ track.artist_name || t('player.unknownArtist') }}</p>
                 </div>
               </div>
-              <button
-                @click.stop="player.removeFromQueue(idx)"
-                class="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800"
-              >
-                <Trash2 class="w-4 h-4" />
-              </button>
+
+              <!-- Reorder & Remove Actions -->
+              <div class="flex items-center gap-1" @click.stop>
+                <button
+                  v-if="idx > 0"
+                  @click="player.moveQueueItem(idx, idx - 1)"
+                  class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800"
+                  title="Move Up"
+                >
+                  <ChevronUp class="w-4 h-4" />
+                </button>
+                <button
+                  v-if="idx < player.queue.length - 1"
+                  @click="player.moveQueueItem(idx, idx + 1)"
+                  class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800"
+                  title="Move Down"
+                >
+                  <ChevronDown class="w-4 h-4" />
+                </button>
+                <button
+                  @click="player.removeFromQueue(idx)"
+                  class="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800"
+                >
+                  <Trash2 class="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
+        <!-- View Mode: Artwork, Controls, Waveform -->
         <div v-else class="w-full flex-1 flex flex-col items-center justify-around">
           <!-- Album Artwork -->
           <div class="relative w-64 h-64 sm:w-80 sm:h-80 rounded-3xl overflow-hidden shadow-2xl border border-slate-800/80 bg-slate-900 group my-4">
@@ -144,9 +167,17 @@ const handleSeek = (e: MouseEvent) => {
             <div v-else class="w-full h-full flex items-center justify-center text-slate-600 bg-gradient-to-tr from-slate-900 to-slate-800">
               <Music2 class="w-24 h-24 stroke-1 text-slate-500/60" />
             </div>
+
+            <!-- Buffering Overlay -->
+            <div
+              v-if="player.isBuffering"
+              class="absolute inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center text-orange-500"
+            >
+              <Loader2 class="w-12 h-12 animate-spin" />
+            </div>
           </div>
 
-          <!-- Metadata & Favorite -->
+          <!-- Metadata & Actions -->
           <div class="w-full flex items-center justify-between mt-4">
             <div class="min-w-0 flex-1">
               <h2 class="text-xl sm:text-2xl font-bold text-white truncate">
@@ -221,13 +252,14 @@ const handleSeek = (e: MouseEvent) => {
               <SkipBack class="w-7 h-7" />
             </button>
 
-            <!-- Play / Pause -->
+            <!-- Play / Pause / Buffering -->
             <button
               @click="player.togglePlay()"
               class="w-16 h-16 rounded-full bg-gradient-to-tr from-orange-600 to-orange-400 hover:from-orange-500 hover:to-orange-300 text-white flex items-center justify-center shadow-xl shadow-orange-500/30 transition-transform active:scale-95"
               :title="player.isPlaying ? t('player.pause') : t('player.play')"
             >
-              <Pause v-if="player.isPlaying" class="w-8 h-8 fill-current" />
+              <Loader2 v-if="player.isBuffering" class="w-7 h-7 animate-spin" />
+              <Pause v-else-if="player.isPlaying" class="w-8 h-8 fill-current" />
               <Play v-else class="w-8 h-8 fill-current ms-1" />
             </button>
 

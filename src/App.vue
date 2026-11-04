@@ -40,6 +40,7 @@ const handleKeydown = (e: KeyboardEvent) => {
 
 onMounted(() => {
   window.addEventListener('keydown', handleKeydown)
+  player.restoreSavedState()
 })
 
 onUnmounted(() => {

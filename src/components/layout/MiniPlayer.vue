@@ -11,7 +11,9 @@ import {
   Music2,
   Repeat,
   Repeat1,
-  Shuffle
+  Shuffle,
+  Loader2,
+  AlertCircle
 } from 'lucide-vue-next'
 import { usePlayerStore } from '@/stores/player'
 import { useI18n } from '@/i18n'
@@ -32,7 +34,7 @@ const handleSeek = (e: MouseEvent) => {
 
 <template>
   <div
-    class="fixed inset-x-0 bottom-14 md:bottom-0 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/90 shadow-2xl transition-all duration-300"
+    class="fixed inset-x-0 bottom-14 md:bottom-0 z-30 bg-slate-900/95 backdrop-blur-xl border-t border-slate-800/90 shadow-2xl transition-all duration-300 select-none"
   >
     <!-- Progress Bar (interactive on hover) -->
     <div
@@ -46,11 +48,23 @@ const handleSeek = (e: MouseEvent) => {
       ></div>
     </div>
 
+    <!-- Error Bar (if stream error) -->
+    <div
+      v-if="player.playbackError"
+      class="px-4 py-1 bg-red-950/80 border-b border-red-800/40 text-red-300 text-xs flex items-center justify-between"
+    >
+      <div class="flex items-center gap-2">
+        <AlertCircle class="w-3.5 h-3.5" />
+        <span>{{ player.playbackError }}</span>
+      </div>
+      <button @click="player.playbackError = null" class="text-slate-400 hover:text-white">✕</button>
+    </div>
+
     <!-- Controls Body -->
     <div class="h-16 md:h-20 px-3 md:px-6 flex items-center justify-between gap-2 md:gap-4 max-w-7xl mx-auto">
       <!-- Track Info (Click to open full player) -->
       <div
-        class="flex items-center gap-3 min-w-0 flex-1 md:flex-initial md:w-72 cursor-pointer group select-none"
+        class="flex items-center gap-3 min-w-0 flex-1 md:flex-initial md:w-72 cursor-pointer group"
         @click="player.openNowPlaying()"
       >
         <div class="relative w-11 h-11 md:w-14 md:h-14 rounded-xl bg-slate-800 flex-shrink-0 overflow-hidden border border-slate-700/50 shadow-md">
@@ -111,13 +125,14 @@ const handleSeek = (e: MouseEvent) => {
             <SkipBack class="w-4 h-4 md:w-5 md:h-5" />
           </button>
 
-          <!-- Play / Pause Main Button -->
+          <!-- Play / Pause / Buffering Main Button -->
           <button
             @click="player.togglePlay()"
             class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white flex items-center justify-center shadow-lg shadow-orange-500/25 transition-transform duration-200 active:scale-95"
             :title="player.isPlaying ? t('player.pause') : t('player.play')"
           >
-            <Pause v-if="player.isPlaying" class="w-5 h-5 md:w-6 md:h-6 fill-current" />
+            <Loader2 v-if="player.isBuffering" class="w-5 h-5 md:w-6 md:h-6 animate-spin" />
+            <Pause v-else-if="player.isPlaying" class="w-5 h-5 md:w-6 md:h-6 fill-current" />
             <Play v-else class="w-5 h-5 md:w-6 md:h-6 fill-current ms-0.5" />
           </button>
 

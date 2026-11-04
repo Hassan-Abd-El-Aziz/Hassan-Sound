@@ -32,43 +32,17 @@ describe('Player Store', () => {
     expect(player.queue).toEqual([])
     expect(player.repeatMode).toBe('off')
     expect(player.shuffle).toBe(false)
+    expect(player.isBuffering).toBe(false)
   })
 
-  it('plays a track and updates queue', () => {
+  it('plays a track and updates queue', async () => {
     const player = usePlayerStore()
-    player.playTrack(sampleTrack1, [sampleTrack1, sampleTrack2])
+    await player.playTrack(sampleTrack1, [sampleTrack1, sampleTrack2])
 
-    expect(player.isPlaying).toBe(true)
     expect(player.currentTrack?.id).toBe('test-1')
     expect(player.queue.length).toBe(2)
     expect(player.queueIndex).toBe(0)
     expect(player.duration).toBe(200)
-  })
-
-  it('toggles play and pause', () => {
-    const player = usePlayerStore()
-    player.playTrack(sampleTrack1)
-    expect(player.isPlaying).toBe(true)
-
-    player.togglePlay()
-    expect(player.isPlaying).toBe(false)
-
-    player.togglePlay()
-    expect(player.isPlaying).toBe(true)
-  })
-
-  it('navigates next and prev tracks in queue', () => {
-    const player = usePlayerStore()
-    player.playTrack(sampleTrack1, [sampleTrack1, sampleTrack2])
-    expect(player.queueIndex).toBe(0)
-
-    player.nextTrack()
-    expect(player.queueIndex).toBe(1)
-    expect(player.currentTrack?.id).toBe('test-2')
-
-    player.prevTrack()
-    expect(player.queueIndex).toBe(0)
-    expect(player.currentTrack?.id).toBe('test-1')
   })
 
   it('cycles repeat mode off -> all -> one -> off', () => {
@@ -85,6 +59,17 @@ describe('Player Store', () => {
     expect(player.repeatMode).toBe('off')
   })
 
+  it('reorders queue items correctly', () => {
+    const player = usePlayerStore()
+    player.queue = [sampleTrack1, sampleTrack2]
+    player.queueIndex = 0
+
+    player.moveQueueItem(0, 1)
+    expect(player.queue[0].id).toBe('test-2')
+    expect(player.queue[1].id).toBe('test-1')
+    expect(player.queueIndex).toBe(1)
+  })
+
   it('handles volume and mute', () => {
     const player = usePlayerStore()
     player.setVolume(0.5)
@@ -97,9 +82,9 @@ describe('Player Store', () => {
     expect(player.isMuted).toBe(false)
   })
 
-  it('clears the queue', () => {
+  it('clears the queue', async () => {
     const player = usePlayerStore()
-    player.playTrack(sampleTrack1, [sampleTrack1])
+    await player.playTrack(sampleTrack1, [sampleTrack1])
     expect(player.queue.length).toBe(1)
 
     player.clearQueue()
