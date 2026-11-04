@@ -8,6 +8,15 @@
 
 ---
 
+## [0.5.0] - 2026-11-04
+### Added (Phase 5 - Playlists & Collections)
+- إنشاء خدمة المجموعات `src/services/collectionsService.ts` ومخزن Pinia `src/stores/collections.ts`.
+- بناء واجهة قوائم التشغيل `PlaylistsView.vue` مع إنشاء وتعديل وحذف القوائم وعرض مساراتها وتشغيلها بالكامل.
+- تطوير صفحة المفضلة `FavoritesView.vue` مع مزامنة فورية لحالة الإعجاب وتشغيل الكل.
+- تطوير صفحة سجل الاستماع `HistoryView.vue` وصفحة المشغلة مؤخرًا `RecentlyPlayedView.vue`.
+- تسجيل تاريخ وجلسات الاستماع الزمني تلقائيًا مع وقت وتاريخ الجلسة وحالة الاكتمال.
+- إضافة اختبارات وحدة للمجموعات وسجل الاستماع والمفضلة (إجمالي 31 اختبار وحدة ناجح).
+
 ## [0.4.0] - 2026-11-04
 ### Added (Phase 4 - Audio Engine & Music Player)
 - إنشاء محرك الصوت الموحد `src/services/audioEngine.ts` (Singleton Audio Engine).
