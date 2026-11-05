@@ -21,7 +21,8 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'portrait-primary',
-        start_url: '/',
+        start_url: process.env.VITE_BASE_PATH || '/',
+        scope: process.env.VITE_BASE_PATH || '/',
         icons: [
           {
             src: '/icons/icon-192x192.png',

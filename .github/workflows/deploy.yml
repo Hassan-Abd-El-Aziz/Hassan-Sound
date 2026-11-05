@@ -38,7 +38,7 @@ jobs:
       - name: Build Application
         run: npm run build
         env:
-          VITE_BASE_PATH: './'
+          VITE_BASE_PATH: '/Hassan-Sound/'
 
       - name: Create 404.html for SPA Routing
         run: cp dist/index.html dist/404.html
