@@ -18,7 +18,7 @@ export const downloadService = {
       let audioBlob: Blob
       let coverBlob: Blob | undefined
 
-      if (isSupabaseConfigured() && track.storage_path) {
+      if (isSupabaseConfigured() && track.storage_path && !track.storage_path.startsWith('http') && !track.storage_path.startsWith('/') && !track.storage_path.startsWith('.')) {
         // 1. Get signed audio URL
         const { url: audioUrl, error: audioUrlErr } = await storageService.getSignedAudioUrl(track.storage_path, 600)
         if (audioUrlErr || !audioUrl) throw audioUrlErr || new Error('Failed to get download URL')
@@ -44,6 +44,25 @@ export const downloadService = {
             } catch (cErr) {
               console.warn('[DownloadService] Cover fetch ignored:', cErr)
             }
+          }
+        }
+      } else if (track.storage_path && (track.storage_path.startsWith('http') || track.storage_path.startsWith('/') || track.storage_path.startsWith('.'))) {
+        // Direct HTTP / Static repository asset download
+        onProgress?.(25, 'downloading')
+        const audioRes = await fetch(track.storage_path)
+        if (!audioRes.ok) throw new Error(`Audio download failed: HTTP ${audioRes.status}`)
+        audioBlob = await audioRes.blob()
+
+        onProgress?.(65, 'downloading')
+
+        if (track.cover_url && !track.cover_url.startsWith('blob:')) {
+          try {
+            const coverRes = await fetch(track.cover_url)
+            if (coverRes.ok) {
+              coverBlob = await coverRes.blob()
+            }
+          } catch (cErr) {
+            console.warn('[DownloadService] Cover fetch ignored:', cErr)
           }
         }
       } else {

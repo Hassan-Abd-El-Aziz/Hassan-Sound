@@ -24,6 +24,10 @@ dist-ssr
 *.sw?
 Thumbs.db
 
+# Generated static music assets (source is "الاغاني")
+public/tracks/
+public/covers/
+
 # Environment variables (Never commit real secrets)
 .env
 .env.production

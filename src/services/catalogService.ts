@@ -26,6 +26,7 @@ export interface FetchResult {
 let localTracks: Track[] = [...demoTracks]
 let localArtists: Artist[] = [...demoArtists]
 let localAlbums: Album[] = [...demoAlbums]
+let staticTracksLoaded = false
 
 export const catalogService = {
   /**
@@ -39,6 +40,38 @@ export const catalogService = {
     const search = options.search?.toLowerCase().trim() || ''
 
     if (!isSupabaseConfigured()) {
+      // 1. Load static git repository tracks from tracks.json if available
+      if (!staticTracksLoaded && typeof window !== 'undefined' && !import.meta.env.VITEST) {
+        try {
+          const rawBase = import.meta.env.BASE_URL || '/'
+          const baseUrl = rawBase.endsWith('/') ? rawBase : rawBase + '/'
+          const res = await fetch(`${baseUrl}tracks.json`)
+          if (res.ok) {
+            const gitTracks: Track[] = await res.json()
+            if (Array.isArray(gitTracks) && gitTracks.length > 0) {
+              // Replace placeholder demo tracks with user's real tracks
+              localTracks = localTracks.filter(t => !t.id.startsWith('demo-'))
+              for (const gt of gitTracks) {
+                if (!localTracks.some(t => t.id === gt.id)) {
+                  localTracks.push({
+                    ...gt,
+                    storage_path: gt.storage_path.startsWith('http')
+                      ? gt.storage_path
+                      : `${baseUrl}${gt.storage_path.replace(/^\.?\//, '')}`,
+                    cover_url: gt.cover_url
+                      ? `${baseUrl}${gt.cover_url.replace(/^\.?\//, '')}`
+                      : undefined
+                  })
+                }
+              }
+            }
+          }
+          staticTracksLoaded = true
+        } catch (e) {
+          console.warn('[CatalogService] Could not fetch static tracks.json:', e)
+        }
+      }
+
       if (typeof indexedDB !== 'undefined') {
         try {
           const offlineRecords = await offlineDb.tracks.toArray()

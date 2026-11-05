@@ -4,7 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/generate-catalog.js && vite",
+    "scan-tracks": "node scripts/generate-catalog.js",
+    "prebuild": "node scripts/generate-catalog.js",
     "build": "vue-tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",

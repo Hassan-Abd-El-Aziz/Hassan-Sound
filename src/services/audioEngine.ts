@@ -169,7 +169,7 @@ export class AudioEngine {
           }
           streamUrl = url
           this.signedUrlExpiry = Date.now() + 3500 * 1000
-        } else if (track.storage_path && track.storage_path.startsWith('http')) {
+        } else if (track.storage_path && (track.storage_path.startsWith('http') || track.storage_path.startsWith('/') || track.storage_path.startsWith('.'))) {
           streamUrl = track.storage_path
         } else {
           if (track.id.startsWith('demo-')) {
