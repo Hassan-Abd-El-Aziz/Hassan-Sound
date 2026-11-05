@@ -9,15 +9,19 @@ import {
   RefreshCw,
   Trash2,
   Edit3,
-  Copy
+  Copy,
+  Play
 } from 'lucide-vue-next'
 import { useI18n } from '@/i18n'
 import { parseAudioFile, isAudioFormatSupported, type ParsedAudioMetadata } from '@/services/audioMetadata'
 import { computeFileHash } from '@/services/cryptoHash'
 import { storageService, isSupabaseConfigured } from '@/services/supabase'
 import { catalogService } from '@/services/catalogService'
+import { offlineDb } from '@/services/offlineDb'
 import { useAuthStore } from '@/stores/auth'
 import { useCatalogStore } from '@/stores/catalog'
+import { usePlayerStore } from '@/stores/player'
+import { useOfflineStore } from '@/stores/offline'
 
 interface UploadQueueItem {
   id: string
@@ -28,11 +32,14 @@ interface UploadQueueItem {
   status: 'pending' | 'parsing' | 'uploading' | 'completed' | 'error' | 'duplicate'
   errorMessage?: string
   isEditing?: boolean
+  createdTrackId?: string
 }
 
 const { t } = useI18n()
 const auth = useAuthStore()
 const catalog = useCatalogStore()
+const player = usePlayerStore()
+const offline = useOfflineStore()
 
 const fileInput = ref<HTMLInputElement | null>(null)
 const folderInput = ref<HTMLInputElement | null>(null)
@@ -169,12 +176,31 @@ const uploadSingleItem = async (item: UploadQueueItem) => {
         release_year: item.metadata.year
       })
 
-      catalog.addTrack(createdTrack)
+      // Also persist to IndexedDB for instant offline playback
+      await offlineDb.tracks.put({
+        id: createdTrack.id,
+        title: createdTrack.title,
+        artist_name: createdTrack.artist_name,
+        album_title: createdTrack.album_title,
+        duration_ms: createdTrack.duration_ms,
+        file_size_bytes: item.file.size,
+        content_hash: item.contentHash,
+        mime_type: item.metadata.mimeType || item.file.type || 'audio/mpeg',
+        audio_blob: item.file,
+        cover_blob: item.metadata.coverBlob,
+        downloaded_at: new Date().toISOString()
+      })
+
+      item.createdTrackId = createdTrack.id
+      catalog.addTrack({
+        ...createdTrack,
+        download_status: 'downloaded'
+      })
+      await offline.loadDownloadedTracks()
     } else {
-      // Demo mode upload simulation
-      await new Promise(r => setTimeout(r, 600))
-      item.progress = 70
-      await new Promise(r => setTimeout(r, 500))
+      // Local / Offline mode: Save file directly to IndexedDB
+      await new Promise(r => setTimeout(r, 400))
+      item.progress = 50
 
       const demoTrack = await catalogService.createTrack(userId, {
         title: item.metadata.title,
@@ -186,14 +212,36 @@ const uploadSingleItem = async (item: UploadQueueItem) => {
         file_size_bytes: item.metadata.fileSizeBytes,
         bitrate: item.metadata.bitrate || 320,
         sample_rate: item.metadata.sampleRate || 44100,
-        storage_path: audioStoragePath,
+        storage_path: `offline://${trackId}`,
         cover_url: item.metadata.coverUrl,
         content_hash: item.contentHash,
         track_number: item.metadata.trackNumber,
         release_year: item.metadata.year
       })
 
-      catalog.addTrack(demoTrack)
+      item.progress = 80
+
+      // Store the actual File/Blob into local IndexedDB
+      await offlineDb.tracks.put({
+        id: demoTrack.id,
+        title: demoTrack.title,
+        artist_name: demoTrack.artist_name,
+        album_title: demoTrack.album_title,
+        duration_ms: demoTrack.duration_ms,
+        file_size_bytes: item.file.size,
+        content_hash: item.contentHash,
+        mime_type: item.metadata.mimeType || item.file.type || 'audio/mpeg',
+        audio_blob: item.file,
+        cover_blob: item.metadata.coverBlob,
+        downloaded_at: new Date().toISOString()
+      })
+
+      item.createdTrackId = demoTrack.id
+      catalog.addTrack({
+        ...demoTrack,
+        download_status: 'downloaded'
+      })
+      await offline.loadDownloadedTracks()
     }
 
     item.progress = 100
@@ -201,7 +249,14 @@ const uploadSingleItem = async (item: UploadQueueItem) => {
   } catch (err: any) {
     console.error('Upload failed:', err)
     item.status = 'error'
-    item.errorMessage = err.message || 'فشل رفع الملف إلى التخزين السحابي'
+    item.errorMessage = err.message || 'فشل رفع الملف إلى التخزين'
+  }
+}
+
+const playUploadedItem = (item: UploadQueueItem) => {
+  const track = catalog.tracks.find(t => t.id === item.createdTrackId || (item.contentHash && t.content_hash === item.contentHash))
+  if (track) {
+    player.playTrack(track)
   }
 }
 
@@ -339,10 +394,20 @@ const formatSize = (bytes: number) => {
 
             <!-- Status Indicator & Action Buttons -->
             <div class="flex items-center gap-3">
-              <span v-if="item.status === 'completed'" class="flex items-center gap-1 text-xs text-emerald-400 font-medium">
-                <CheckCircle2 class="w-4 h-4" />
-                <span>تم الرفع والحفظ</span>
-              </span>
+              <div v-if="item.status === 'completed'" class="flex items-center gap-2">
+                <span class="flex items-center gap-1 text-xs text-emerald-400 font-medium">
+                  <CheckCircle2 class="w-4 h-4" />
+                  <span>تم الرفع والحفظ</span>
+                </span>
+                <button
+                  @click="playUploadedItem(item)"
+                  class="flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-500 hover:bg-orange-400 text-white text-xs font-semibold shadow-md shadow-orange-500/20 transition active:scale-95"
+                  title="تشغيل المقطع الصوتي"
+                >
+                  <Play class="w-3.5 h-3.5 fill-current" />
+                  <span>تشغيل</span>
+                </button>
+              </div>
               <span v-else-if="item.status === 'uploading'" class="text-xs text-orange-400 font-mono">
                 {{ item.progress }}%
               </span>

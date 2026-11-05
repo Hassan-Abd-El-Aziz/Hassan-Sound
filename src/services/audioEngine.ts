@@ -136,7 +136,18 @@ export class AudioEngine {
 
       // 1. Check if track is downloaded locally in IndexedDB
       const { downloadService } = await import('./downloadService')
-      const offlineBlob = await downloadService.getOfflineAudioBlob(track.id)
+      let offlineBlob = await downloadService.getOfflineAudioBlob(track.id)
+
+      // Fallback: search by content_hash in IndexedDB if track id changed
+      if (!offlineBlob && track.content_hash) {
+        try {
+          const { offlineDb } = await import('./offlineDb')
+          const matched = await offlineDb.tracks.where('content_hash').equals(track.content_hash).first()
+          if (matched && matched.audio_blob) {
+            offlineBlob = matched.audio_blob
+          }
+        } catch {}
+      }
 
       if (offlineBlob) {
         console.log('[AudioEngine] Playing track from local IndexedDB offline storage!')
@@ -151,7 +162,7 @@ export class AudioEngine {
         }
 
         // 3. Online cloud stream via Supabase signed URL
-        if (isSupabaseConfigured() && track.storage_path) {
+        if (isSupabaseConfigured() && track.storage_path && !track.storage_path.startsWith('offline://')) {
           const { url, error } = await storageService.getSignedAudioUrl(track.storage_path, 3600)
           if (error || !url) {
             throw error || new Error('Could not get signed URL')
@@ -161,7 +172,11 @@ export class AudioEngine {
         } else if (track.storage_path && track.storage_path.startsWith('http')) {
           streamUrl = track.storage_path
         } else {
-          return this.startSyntheticPlayback(track, startTime)
+          if (track.id.startsWith('demo-')) {
+            return this.startSyntheticPlayback(track, startTime)
+          }
+          this.emit('error', 'تعذر العثور على الملف الصوتي الخاص بهذه الأغنية.')
+          return false
         }
       }
 
@@ -180,7 +195,11 @@ export class AudioEngine {
         this.emit('autoplay_blocked')
         return false
       }
-      return this.startSyntheticPlayback(track, startTime)
+      if (track.id.startsWith('demo-')) {
+        return this.startSyntheticPlayback(track, startTime)
+      }
+      this.emit('error', 'تعذر تشغيل الملف الصوتي.')
+      return false
     }
   }
 

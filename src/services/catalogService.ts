@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured, storageService } from './supabase'
+import { offlineDb } from './offlineDb'
 import type { Track, Artist, Album } from '@/types'
 import { demoTracks, demoArtists, demoAlbums } from '@/data/demoTracks'
 
@@ -38,6 +39,31 @@ export const catalogService = {
     const search = options.search?.toLowerCase().trim() || ''
 
     if (!isSupabaseConfigured()) {
+      if (typeof indexedDB !== 'undefined') {
+        try {
+          const offlineRecords = await offlineDb.tracks.toArray()
+          for (const rec of offlineRecords) {
+            if (!localTracks.some(t => t.id === rec.id)) {
+              localTracks.unshift({
+                id: rec.id,
+                title: rec.title,
+                artist_name: rec.artist_name || 'فنان غير معروف',
+                album_title: rec.album_title || 'مفردات',
+                duration_ms: rec.duration_ms,
+                file_size_bytes: rec.file_size_bytes,
+                storage_path: 'offline://' + rec.id,
+                content_hash: rec.content_hash,
+                download_status: 'downloaded',
+                cover_url: rec.cover_blob ? URL.createObjectURL(rec.cover_blob) : undefined,
+                created_at: rec.downloaded_at
+              })
+            }
+          }
+        } catch (e) {
+          console.warn('[CatalogService] Could not sync offline tracks:', e)
+        }
+      }
+
       let filtered = [...localTracks]
 
       if (search) {
@@ -275,7 +301,26 @@ export const catalogService = {
   async checkDuplicateHash(hash: string): Promise<Track | null> {
     if (!hash) return null
     if (!isSupabaseConfigured()) {
-      return localTracks.find(t => t.content_hash === hash) || null
+      const memoryMatch = localTracks.find(t => t.content_hash === hash)
+      if (memoryMatch) return memoryMatch
+      if (typeof indexedDB !== 'undefined') {
+        try {
+          const offlineMatch = await offlineDb.tracks.where('content_hash').equals(hash).first()
+          if (offlineMatch) {
+            return {
+              id: offlineMatch.id,
+              title: offlineMatch.title,
+              artist_name: offlineMatch.artist_name,
+              album_title: offlineMatch.album_title,
+              duration_ms: offlineMatch.duration_ms,
+              file_size_bytes: offlineMatch.file_size_bytes,
+              storage_path: 'offline://' + offlineMatch.id,
+              content_hash: offlineMatch.content_hash
+            }
+          }
+        } catch {}
+      }
+      return null
     }
 
     const { data } = await supabase
@@ -368,6 +413,18 @@ export const catalogService = {
    * Updates an existing track's metadata.
    */
   async updateTrack(id: string, updates: Partial<Track>): Promise<boolean> {
+    if (typeof indexedDB !== 'undefined') {
+      try {
+        const rec = await offlineDb.tracks.get(id)
+        if (rec) {
+          if (updates.title) rec.title = updates.title
+          if (updates.artist_name) rec.artist_name = updates.artist_name
+          if (updates.album_title) rec.album_title = updates.album_title
+          await offlineDb.tracks.put(rec)
+        }
+      } catch {}
+    }
+
     if (!isSupabaseConfigured()) {
       let idx = localTracks.findIndex(t => t.id === id)
       if (idx === -1) {
@@ -395,6 +452,12 @@ export const catalogService = {
    * Deletes a track from the database and optionally removes storage files.
    */
   async deleteTrack(track: Track): Promise<boolean> {
+    if (typeof indexedDB !== 'undefined') {
+      try {
+        await offlineDb.tracks.delete(track.id)
+      } catch {}
+    }
+
     if (!isSupabaseConfigured()) {
       localTracks = localTracks.filter(t => t.id !== track.id)
       return true
